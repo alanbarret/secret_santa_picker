@@ -108,14 +108,15 @@ def clear_numbers():
 
 @app.route('/pick_number', methods=['POST'])
 def pick_number():
-    global numbers_pool
-    numbers_pool = load_numbers_pool()  # Reload to get latest state
-
-    if not numbers_pool:
-        flash('Please wait for the admin to set up the numbers.', 'error')
-        return redirect(url_for('index'))
     try:
-        available_picker_numbers = [num for num, status in numbers_pool.items() 
+        # Load current state but don't overwrite the global pool
+        current_pool = load_numbers_pool()
+        
+        if not current_pool:
+            flash('Please wait for the admin to set up the numbers.', 'error')
+            return redirect(url_for('index'))
+        
+        available_picker_numbers = [num for num, status in current_pool.items() 
                                  if not status['has_picked']]
         
         if not available_picker_numbers:
@@ -124,7 +125,7 @@ def pick_number():
         
         current_number = random.choice(available_picker_numbers)
         
-        available_numbers = [num for num, status in numbers_pool.items() 
+        available_numbers = [num for num, status in current_pool.items() 
                            if status['is_assigned_to'] is None and num != current_number]
         
         if not available_numbers:
@@ -132,10 +133,10 @@ def pick_number():
             return redirect(url_for('index'))
         
         chosen_number = random.choice(available_numbers)
-        numbers_pool[current_number]['has_picked'] = True
-        numbers_pool[chosen_number]['is_assigned_to'] = current_number
+        current_pool[current_number]['has_picked'] = True
+        current_pool[chosen_number]['is_assigned_to'] = current_number
         
-        save_numbers_pool(numbers_pool)  # Save after updating
+        save_numbers_pool(current_pool)
         
         return render_template('result_popup.html', 
                              current_number=current_number,
