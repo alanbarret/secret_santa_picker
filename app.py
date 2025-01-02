@@ -8,20 +8,39 @@ app.secret_key = os.urandom(24)
 
 def load_numbers_pool():
     try:
-        if os.path.exists('numbers_pool.json'):
-            with open('numbers_pool.json', 'r') as f:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        json_path = os.path.join(base_dir, 'numbers_pool.json')
+        
+        if os.path.exists(json_path):
+            with open(json_path, 'r') as f:
                 return json.load(f)
         return {}
     except Exception as e:
         print(f"Error loading numbers pool: {e}")
+        import traceback
+        print(traceback.format_exc())
         return {}
-
+    
 def save_numbers_pool(pool):
     try:
-        with open('numbers_pool.json', 'w') as f:
+        # Get the absolute path to the JSON file
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        json_path = os.path.join(base_dir, 'numbers_pool.json')
+        
+        # Ensure directory exists and has write permissions
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+        
+        # Write with explicit file permissions
+        with open(json_path, 'w') as f:
             json.dump(pool, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())  # Force write to disk
+            
     except Exception as e:
         print(f"Error saving numbers pool: {e}")
+        # Log the error details
+        import traceback
+        print(traceback.format_exc())
 
 # Dictionary to store numbers and their assignment status
 numbers_pool = load_numbers_pool()  # Format: {number: {'is_assigned_to': None, 'has_picked': False}}
