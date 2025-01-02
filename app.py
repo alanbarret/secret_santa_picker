@@ -1,23 +1,80 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import random
-import csv
-import io
 import os
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24) 
+app.secret_key = os.urandom(24)
 
-# Dictionary to store names and their assignment status
-names_pool = {}  # Format: {name: {'is_assigned_to': None, 'has_picked': False}}
+# Initialize Supabase client
+try:
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    
+    if not supabase_url or not supabase_key:
+        raise ValueError("Missing Supabase credentials")
+        
+    supabase = create_client(
+        supabase_url,
+        supabase_key
+    )
+except Exception as e:
+    print(f"Error initializing Supabase client: {e}")
+    raise
+
+def load_numbers_pool():
+    try:
+        response = supabase.table('numbers_pool').select("*").execute()
+        if response.data:
+            # Convert the array of records to our desired format
+            pool = {}
+            for record in response.data:
+                pool[record['number']] = {
+                    'is_assigned_to': record['is_assigned_to'],
+                    'has_picked': record['has_picked']
+                }
+            return pool
+        return {}
+    except Exception as e:
+        print(f"Error loading numbers pool: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return {}
+
+def save_numbers_pool(pool):
+    try:
+        # First, clear existing records
+        supabase.table('numbers_pool').delete().neq('number', '0').execute()
+        
+        # Insert new records
+        records = []
+        for number, status in pool.items():
+            records.append({
+                'number': number,
+                'is_assigned_to': status['is_assigned_to'],
+                'has_picked': status['has_picked']
+            })
+        
+        if records:
+            supabase.table('numbers_pool').insert(records).execute()
+            
+    except Exception as e:
+        print(f"Error saving numbers pool: {e}")
+        import traceback
+        print(traceback.format_exc())
+
+# Dictionary to store numbers and their assignment status
+numbers_pool = load_numbers_pool()  # Format: {number: {'is_assigned_to': None, 'has_picked': False}}
+
+# Admin credentials from environment variables
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME','admin')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD','secretsanta2025')
 
 @app.route('/')
 def index():
-<<<<<<< Updated upstream
-    # Only show names that haven't picked yet
-    available_names = [name for name, status in names_pool.items() 
-                      if not status['has_picked']]
-    return render_template('index.html', names=available_names)
-=======
     if not numbers_pool:
         return render_template('index.html', waiting_for_admin=True)
     
@@ -54,56 +111,56 @@ def login():
 def logout():
     session.pop('admin_logged_in', None)
     return redirect(url_for('index'))
->>>>>>> Stashed changes
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html', names=names_pool)
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
+    # Reload numbers pool from JSON file
+    current_pool = load_numbers_pool()
+    return render_template('admin.html', numbers=current_pool)
 
-
-@app.route('/upload_csv', methods=['POST'])
-def upload_csv():
-    if 'file' not in request.files:
-        flash('No file selected', 'error')
-        return redirect(url_for('admin'))
+@app.route('/set_range', methods=['POST'])
+def set_range():
+    if not session.get('admin_logged_in'):
+        flash('Please login as admin first', 'error')
+        return redirect(url_for('login'))
+        
+    try:
+        max_number = int(request.form.get('max_number', 0))
+        if max_number < 2:
+            flash('Please enter a number greater than 1', 'error')
+            return redirect(url_for('admin'))
+        
+        numbers_pool.clear()
+        for num in range(1, max_number + 1):
+            numbers_pool[str(num)] = {
+                'is_assigned_to': None,
+                'has_picked': False
+            }
+        
+        save_numbers_pool(numbers_pool)
+        flash('Number range set successfully!', 'success')
+    except ValueError:
+        flash('Please enter a valid number', 'error')
     
-    file = request.files['file']
-    if file.filename == '':
-        flash('No file selected', 'error')
-        return redirect(url_for('admin'))
-
-    if file and file.filename.endswith('.csv'):
-        try:
-            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-            csv_reader = csv.reader(stream)
-            
-            names_pool.clear()
-            for row in csv_reader:
-                if row:  # Skip empty rows
-                    name = row[0].strip()
-                    if name:  # Skip empty names
-                        names_pool[name] = {
-                            'is_assigned_to': None,  # Who this person is Secret Santa for
-                            'has_picked': False      # Whether they've picked their person
-                        }
-            
-            flash('Names uploaded successfully!', 'success')
-        except Exception as e:
-            flash(f'Error processing file: {str(e)}', 'error')
-    else:
-        flash('Please upload a CSV file', 'error')
-
     return redirect(url_for('admin'))
 
-<<<<<<< Updated upstream
-@app.route('/pick_friend', methods=['POST'])
-def pick_friend():
-    current_person = request.form.get('name', '')
+@app.route('/clear_numbers', methods=['POST'])
+def clear_numbers():
+    if not session.get('admin_logged_in'):
+        flash('Please login as admin first', 'error')
+        return redirect(url_for('login'))
+        
+    try:
+        numbers_pool.clear()
+        save_numbers_pool(numbers_pool)
+        flash('All numbers have been cleared successfully!', 'success')
+    except Exception as e:
+        flash('An error occurred while clearing numbers', 'error')
     
-    # Check if person has already picked
-    if current_person not in names_pool or names_pool[current_person]['has_picked']:
-        flash('You have already picked your Secret Santa friend!', 'error')
-=======
+    return redirect(url_for('admin'))
+
 @app.route('/clear_numbers', methods=['POST'])
 def clear_numbers():
     if not session.get('admin_logged_in'):
@@ -168,7 +225,6 @@ def pick_number():
                              chosen_number=chosen_number)
     except Exception as e:
         flash('An error occurred while picking numbers', 'error')
->>>>>>> Stashed changes
         return redirect(url_for('index'))
     
     # Get list of available names (not assigned and not the current person)
@@ -178,14 +234,6 @@ def pick_number():
     if not available_names:
         flash('No more friends available to pick!', 'error')
         return redirect(url_for('index'))
-    
-    chosen_friend = random.choice(available_names)
-    names_pool[current_person]['has_picked'] = True
-    names_pool[chosen_friend]['is_assigned_to'] = current_person
-    
-    return render_template('result_popup.html', 
-                         current_person=current_person,
-                         chosen_friend=chosen_friend)
 
 if __name__ == '__main__':
     app.run(debug=True)
