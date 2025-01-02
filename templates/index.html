@@ -123,17 +123,51 @@
             background: rgba(255, 255, 255, 0.9);
             font-size: 1rem;
         }
+
+        .waiting-message {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            margin: 1rem 0;
+        }
+            /* Add this to the existing styles */
+        .waiting-message {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            color: #ffc107;
+            margin: 2rem 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1> MVP</h1>
         <h1>🎄 Secret Santa 🎄</h1>
         
         <div class="input-group">
-            <form action="/pick_number" method="post">
-                <button type="submit">🎁 Pick Your Secret Santa Number 🎁</button>
-            </form>
+            {% if waiting_for_admin %}
+                <div class="waiting-message">
+                    🎄 Welcome to Secret Santa! 🎄</br>
+                    The admin is currently setting up the gift exchange numbers.
+                    Please check back in a few moments to join in the holiday fun!</br> 
+                    
+                    In the meantime, get ready to spread some New Year cheer! </br>
+                    🎅✨🎁
+                </div>
+            {% else %}
+                <form action="/pick_number" method="post">
+                    <button type="submit">🎁 Pick Your Secret Santa Number 🎁</button>
+                </form>
+            {% endif %}
         </div>
     </div>
 

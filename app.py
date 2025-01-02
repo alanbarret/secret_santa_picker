@@ -14,10 +14,12 @@ ADMIN_PASSWORD = "secretsanta2025"
 
 @app.route('/')
 def index():
+    if not numbers_pool:
+        return render_template('index.html', waiting_for_admin=True)
     # Only show numbers that haven't picked yet
     available_numbers = [num for num, status in numbers_pool.items() 
                         if not status['has_picked']]
-    return render_template('index.html', numbers=sorted(available_numbers))
+    return render_template('index.html', waiting_for_admin=False, numbers=sorted(available_numbers))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -68,6 +70,10 @@ def set_range():
 
 @app.route('/pick_number', methods=['POST'])
 def pick_number():
+
+    if not numbers_pool:
+        flash('Please wait for the admin to set up the numbers.', 'error')
+        return redirect(url_for('index'))
     try:
         # Get list of numbers that haven't picked yet
         available_picker_numbers = [num for num, status in numbers_pool.items() 
