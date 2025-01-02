@@ -10,10 +10,20 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # Initialize Supabase client
-supabase: Client = create_client(
-    os.getenv('SUPABASE_URL'),
-    os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-)
+try:
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    
+    if not supabase_url or not supabase_key:
+        raise ValueError("Missing Supabase credentials")
+        
+    supabase = create_client(
+        supabase_url,
+        supabase_key
+    )
+except Exception as e:
+    print(f"Error initializing Supabase client: {e}")
+    raise
 
 def load_numbers_pool():
     try:
@@ -59,9 +69,9 @@ def save_numbers_pool(pool):
 # Dictionary to store numbers and their assignment status
 numbers_pool = load_numbers_pool()  # Format: {number: {'is_assigned_to': None, 'has_picked': False}}
 
-# Admin credentials (in a real app, use proper authentication and hashing)
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "secretsanta2025"
+# Admin credentials from environment variables
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME','admin')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD','secretsanta2025')
 
 @app.route('/')
 def index():
