@@ -63,7 +63,9 @@ def logout():
 def admin():
     if not session.get('admin_logged_in'):
         return redirect(url_for('login'))
-    return render_template('admin.html', numbers=numbers_pool)
+    # Reload numbers pool from JSON file
+    current_pool = load_numbers_pool()
+    return render_template('admin.html', numbers=current_pool)
 
 @app.route('/set_range', methods=['POST'])
 def set_range():
