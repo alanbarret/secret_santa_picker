@@ -146,20 +146,6 @@ def set_range():
     
     return redirect(url_for('admin'))
 
-@app.route('/clear_numbers', methods=['POST'])
-def clear_numbers():
-    if not session.get('admin_logged_in'):
-        flash('Please login as admin first', 'error')
-        return redirect(url_for('login'))
-        
-    try:
-        numbers_pool.clear()
-        save_numbers_pool(numbers_pool)
-        flash('All numbers have been cleared successfully!', 'success')
-    except Exception as e:
-        flash('An error occurred while clearing numbers', 'error')
-    
-    return redirect(url_for('admin'))
 
 @app.route('/clear_numbers', methods=['POST'])
 def clear_numbers():
