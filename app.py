@@ -12,7 +12,7 @@ app.secret_key = os.urandom(24)
 # Initialize Supabase client
 supabase: Client = create_client(
     os.getenv('SUPABASE_URL'),
-    os.getenv('SUPABASE_KEY')
+    os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 )
 
 def load_numbers_pool():
@@ -59,9 +59,9 @@ def save_numbers_pool(pool):
 # Dictionary to store numbers and their assignment status
 numbers_pool = load_numbers_pool()  # Format: {number: {'is_assigned_to': None, 'has_picked': False}}
 
-# Admin credentials from environment variables
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'secretsanta2025')
+# Admin credentials (in a real app, use proper authentication and hashing)
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "secretsanta2025"
 
 @app.route('/')
 def index():
