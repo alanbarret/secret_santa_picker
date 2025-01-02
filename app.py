@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import random
 import os
 
@@ -8,6 +8,10 @@ app.secret_key = os.urandom(24)
 # Dictionary to store numbers and their assignment status
 numbers_pool = {}  # Format: {number: {'is_assigned_to': None, 'has_picked': False}}
 
+# Admin credentials (in a real app, use proper authentication and hashing)
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "secretsanta2025"
+
 @app.route('/')
 def index():
     # Only show numbers that haven't picked yet
@@ -15,8 +19,30 @@ def index():
                         if not status['has_picked']]
     return render_template('index.html', numbers=sorted(available_numbers))
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            flash('Invalid credentials', 'error')
+            return redirect(url_for('login'))
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('index'))
+
 @app.route('/admin')
 def admin():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
     return render_template('admin.html', numbers=numbers_pool)
 
 @app.route('/set_range', methods=['POST'])

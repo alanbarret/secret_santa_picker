@@ -115,6 +115,8 @@
 </head>
 <body>
     <div class="container">
+        <!-- Add this button near the top of the container div -->
+        <a href="{{ url_for('logout') }}" class="home-button" style="background: #dc3545;">Logout</a>
         <h1>🎄 Secret Santa Admin 🎄</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
