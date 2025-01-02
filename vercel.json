@@ -5,5 +5,9 @@
     ],
     "routes": [
       { "src": "/(.*)", "dest": "/app.py" }
-    ]
+    ],
+    "env": {
+      "SUPABASE_URL": "@SUPABASE_URL",
+      "SUPABASE_KEY": "@NEXT_PUBLIC_SUPABASE_URL"
+    }
   }
