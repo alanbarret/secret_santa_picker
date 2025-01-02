@@ -130,15 +130,23 @@
         <h1>🎄 Secret Santa Picker 🎄</h1>
         
         <div class="input-group">
-            <form action="/pick_friend" method="post">
-                <select name="name" required>
-                    <option value="">Select your name</option>
-                    {% for name in names %}
-                        <option value="{{ name }}">{{ name }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit">🎁 Pick a Christmas Friend 🎁</button>
-            </form>
+            {% if has_picked %}
+                <div class="waiting-message">
+                    You have already picked your number!<br>
+                    Your number is: {{ picked_number }}<br>
+                    Please wait for everyone else to pick their numbers.
+                </div>
+            {% elif waiting_for_admin %}
+                <div class="waiting-message">
+                    🎄 Welcome to Secret Santa! 🎄</br>
+                    The admin is currently setting up the gift exchange numbers.
+                    Please check back in a few moments to join in the holiday fun!</br>
+                </div>
+            {% else %}
+                <form action="/pick_number" method="post">
+                    <button type="submit">🎁 Pick Your Secret Santa Number 🎁</button>
+                </form>
+            {% endif %}
         </div>
 
         {% if chosen_friend %}
