@@ -1,53 +1,67 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import random
 import os
-import json
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+# Initialize Supabase client
+supabase: Client = create_client(
+    os.getenv('SUPABASE_URL'),
+    os.getenv('SUPABASE_KEY')
+)
+
 def load_numbers_pool():
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(base_dir, 'numbers_pool.json')
-        
-        if os.path.exists(json_path):
-            with open(json_path, 'r') as f:
-                return json.load(f)
+        response = supabase.table('numbers_pool').select("*").execute()
+        if response.data:
+            # Convert the array of records to our desired format
+            pool = {}
+            for record in response.data:
+                pool[record['number']] = {
+                    'is_assigned_to': record['is_assigned_to'],
+                    'has_picked': record['has_picked']
+                }
+            return pool
         return {}
     except Exception as e:
         print(f"Error loading numbers pool: {e}")
         import traceback
         print(traceback.format_exc())
         return {}
-    
+
 def save_numbers_pool(pool):
     try:
-        # Get the absolute path to the JSON file
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(base_dir, 'numbers_pool.json')
+        # First, clear existing records
+        supabase.table('numbers_pool').delete().neq('number', '0').execute()
         
-        # Ensure directory exists and has write permissions
-        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+        # Insert new records
+        records = []
+        for number, status in pool.items():
+            records.append({
+                'number': number,
+                'is_assigned_to': status['is_assigned_to'],
+                'has_picked': status['has_picked']
+            })
         
-        # Write with explicit file permissions
-        with open(json_path, 'w') as f:
-            json.dump(pool, f, indent=4)
-            f.flush()
-            os.fsync(f.fileno())  # Force write to disk
+        if records:
+            supabase.table('numbers_pool').insert(records).execute()
             
     except Exception as e:
         print(f"Error saving numbers pool: {e}")
-        # Log the error details
         import traceback
         print(traceback.format_exc())
 
 # Dictionary to store numbers and their assignment status
 numbers_pool = load_numbers_pool()  # Format: {number: {'is_assigned_to': None, 'has_picked': False}}
 
-# Admin credentials (in a real app, use proper authentication and hashing)
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "secretsanta2025"
+# Admin credentials from environment variables
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'secretsanta2025')
 
 @app.route('/')
 def index():
