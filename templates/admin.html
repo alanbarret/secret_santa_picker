@@ -111,6 +111,27 @@
             color: #ffc107;
             font-weight: bold;
         }
+
+        .clear-section {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .clear-button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-button:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -130,11 +151,18 @@
         {% endwith %}
 
         <div class="upload-section">
-            <h2>Set Number Range</h2>
+            <h2>Set a Gift Pool Range</h2>
             <form action="{{ url_for('set_range') }}" method="post">
                 <input type="number" name="max_number" min="2" required placeholder="Enter maximum number">
-                <button type="submit">Set Range</button>
+                <button type="submit">Create Gift Pool</button>
             </form>
+            
+            <div class="clear-section">
+                <h3>Clear Pool</h3>
+                <form action="{{ url_for('clear_numbers') }}" method="post">
+                    <button type="submit" class="clear-button">Clear All Numbers</button>
+                </form>
+            </div>
         </div>
 
         <div class="names-list">
