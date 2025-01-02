@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christmas Friend Admin</title>
+    <title>Secret Santa Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body, html {
@@ -100,11 +100,24 @@
             background: #ff1744;
             transform: translateY(-2px);
         }
+
+        .assignment-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .gift-number {
+            color: #ffc107;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎄 Christmas Friend Admin 🎄</h1>
+        <!-- Add this button near the top of the container div -->
+        <a href="{{ url_for('logout') }}" class="home-button" style="background: #dc3545;">Logout</a>
+        <h1>🎄 Secret Santa Admin 🎄</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -117,20 +130,25 @@
         {% endwith %}
 
         <div class="upload-section">
-            <h2>Upload Names</h2>
-            <form action="{{ url_for('upload_csv') }}" method="post" enctype="multipart/form-data">
-                <input type="file" name="file" accept=".csv" required>
-                <button type="submit">Upload Friends List</button>
+            <h2>Set Number Range</h2>
+            <form action="{{ url_for('set_range') }}" method="post">
+                <input type="number" name="max_number" min="2" required placeholder="Enter maximum number">
+                <button type="submit">Set Range</button>
             </form>
         </div>
 
         <div class="names-list">
-            {% for name, status in names.items() %}
+            {% for number, status in numbers.items()|sort %}
                 <div class="name-tag">
-                    <span>{{ name }}</span>
-                    <div class="status">
+                    <div class="assignment-info">
+                        <span>Number {{ number }}</span>
                         {% if status.has_picked %}
                             <span class="assigned">Has picked ✓</span>
+                            {% for gift_num, gift_status in numbers.items() %}
+                                {% if gift_status.is_assigned_to == number %}
+                                    <span class="gift-number">Gift Number: {{ gift_num }}</span>
+                                {% endif %}
+                            {% endfor %}
                         {% else %}
                             <span class="not-assigned">Hasn't picked yet ○</span>
                         {% endif %}
