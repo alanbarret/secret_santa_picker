@@ -80,9 +80,18 @@ def index():
     
     # Check if user has already picked
     if session.get('has_picked'):
+        picked_number = session.get('picked_number')
+        # Find the gift number assigned to this user
+        gift_number = None
+        for number, status in numbers_pool.items():
+            if status['is_assigned_to'] == picked_number:
+                gift_number = number
+                break
+                
         return render_template('index.html', 
                              has_picked=True, 
-                             picked_number=session.get('picked_number'))
+                             picked_number=picked_number,
+                             gift_number=gift_number)
     
     # Only show numbers that haven't picked yet
     available_numbers = [num for num, status in numbers_pool.items() 
