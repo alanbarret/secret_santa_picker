@@ -81,17 +81,27 @@ def index():
     # Check if user has already picked
     if session.get('has_picked'):
         picked_number = session.get('picked_number')
-        # Find the gift number assigned to this user
-        gift_number = None
-        for number, status in numbers_pool.items():
-            if status['is_assigned_to'] == picked_number:
-                gift_number = number
-                break
+        try:
+            # Query Supabase directly for the gift number
+            response = supabase.table('numbers_pool')\
+                .select("number")\
+                .eq('is_assigned_to', picked_number)\
+                .execute()
                 
-        return render_template('index.html', 
-                             has_picked=True, 
-                             picked_number=picked_number,
-                             gift_number=gift_number)
+            gift_number = response.data[0]['number'] if response.data else None
+                
+            return render_template('index.html', 
+                                 has_picked=True, 
+                                 picked_number=picked_number,
+                                 gift_number=gift_number)
+        except Exception as e:
+            print(f"Error getting gift number: {e}")
+            import traceback
+            print(traceback.format_exc())
+            return render_template('index.html', 
+                                 has_picked=True, 
+                                 picked_number=picked_number,
+                                 gift_number="Error retrieving gift number")
     
     # Only show numbers that haven't picked yet
     available_numbers = [num for num, status in numbers_pool.items() 
